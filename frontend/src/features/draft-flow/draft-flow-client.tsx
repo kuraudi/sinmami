@@ -143,7 +143,7 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
     if (!selectedStep) return;
     if (fromPreview) {
       if (hasUnsavedChanges) await persistCurrentStep();
-      router.push(`/drafts/${draftId}/preview`);
+      router.push(`/drafts/${draftId}/preview?t=${Date.now()}`);
       return;
     }
     let savedNextKey: string | null = null;
@@ -189,38 +189,38 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
 
   return (
     <AppShell eyebrow="Договор аренды" title="Заполнение черновика">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4 md:gap-5">
 
         {/* ── Прогресс-бар сверху ── */}
-        <div className="rounded-3xl border border-(--line) bg-white p-5">
-          <div className="flex items-center justify-between gap-4">
+        <div className="rounded-3xl border border-(--line) bg-white p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
             {/* Левая часть: название + статус */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+            <div className="flex items-center gap-2 min-w-0 sm:gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl sm:h-9 sm:w-9"
                 style={{ background: "var(--gradient)" }}>
-                <FileText size={16} strokeWidth={1.75} className="text-white" />
+                <FileText size={15} strokeWidth={1.75} className="text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">
+                <p className="text-xs font-semibold text-foreground truncate sm:text-sm">
                   {draft ? documentTypeLabel(draft.documentType) : "Черновик"}
                 </p>
-                <p className="text-xs text-(--muted)">
-                  Шаг {currentStepIndex + 1} из {steps.length} · {answeredRequiredSteps}/{requiredSteps.length} обязательных
+                <p className="text-[10px] text-(--muted) sm:text-xs">
+                  Шаг {currentStepIndex + 1} из {steps.length} · {answeredRequiredSteps}/{requiredSteps.length} обяз.
                 </p>
               </div>
-              {draft && <StatusPill status={draft.status} />}
+              <div className="hidden sm:block">{draft && <StatusPill status={draft.status} />}</div>
             </div>
 
             {/* Правая: процент + кнопка навигации */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 sm:gap-3">
               <span className="text-sm font-bold text-indigo-600">{progress}%</span>
               <button
                 type="button"
                 onClick={() => setNavOpen(!navOpen)}
-                className="flex items-center gap-1.5 rounded-xl border border-(--line) px-3 py-1.5 text-xs font-medium text-(--muted) transition hover:bg-stone-50"
+                className="flex items-center gap-1.5 rounded-xl border border-(--line) px-2.5 py-1.5 text-xs font-medium text-(--muted) transition hover:bg-stone-50 sm:px-3"
               >
                 {navOpen ? <X size={13} strokeWidth={2} /> : <Menu size={13} strokeWidth={2} />}
-                Шаги
+                <span className="hidden sm:inline">Шаги</span>
               </button>
             </div>
           </div>
@@ -281,7 +281,7 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
         </div>
 
         {/* ── Основная область: форма + помощник ── */}
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid gap-4 md:gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
 
           {/* Центр: текущий шаг */}
           <div className="min-w-0">
@@ -297,7 +297,7 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="rounded-3xl border border-(--line) bg-white p-6 md:p-8"
+                  className="rounded-3xl border border-(--line) bg-white p-5 sm:p-6 md:p-8"
                 >
                   {/* Статус-строка */}
                   <div className="flex items-center justify-between gap-3 mb-6">
@@ -329,17 +329,17 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                   />
 
                   {/* Навигация */}
-                  <div className="mt-8 flex flex-col gap-4 border-t border-(--line) pt-6">
+                  <div className="mt-6 flex flex-col gap-3 border-t border-(--line) pt-5 sm:mt-8 sm:gap-4 sm:pt-6">
 
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
                     <button
                       type="button"
                       onClick={() => previousStep && setSelectedStepKey(previousStep.stepKey)}
                       disabled={!previousStep}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-(--line) bg-white px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex items-center gap-1.5 rounded-2xl border border-(--line) bg-white px-3 py-2.5 text-sm font-semibold text-foreground transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 sm:gap-2 sm:px-4"
                     >
-                      <ChevronLeft size={16} strokeWidth={2} />
-                      Назад
+                      <ChevronLeft size={15} strokeWidth={2} />
+                      <span className="hidden sm:inline">Назад</span>
                     </button>
 
                     <div className="flex items-center gap-2">
@@ -347,9 +347,9 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                         type="button"
                         onClick={handleValidate}
                         disabled={isValidating || isSaving}
-                        className="rounded-2xl border border-(--line) bg-white px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-stone-50 disabled:opacity-50"
+                        className="rounded-2xl border border-(--line) bg-white px-3 py-2.5 text-sm font-semibold text-foreground transition hover:bg-stone-50 disabled:opacity-50 sm:px-4"
                       >
-                        {isValidating ? "Проверяю..." : "Проверить"}
+                        {isValidating ? "..." : "Проверить"}
                       </button>
 
                       {/* Из предпросмотра — только Сохранить */}
@@ -548,7 +548,7 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.97 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl"
+              className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-8"
             >
               <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: "var(--gradient)" }}>
                 <ShieldCheck size={22} strokeWidth={1.75} className="text-white" />

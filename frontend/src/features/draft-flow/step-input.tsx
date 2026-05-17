@@ -68,7 +68,7 @@ export function StepInput({ step, value, onChange }: StepInputProps) {
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-indigo-500">{step.section}</p>
-          <h3 className="font-editorial mt-1.5 wrap-break-word text-3xl leading-tight text-foreground">
+          <h3 className="font-editorial mt-1.5 wrap-break-word text-2xl leading-tight text-foreground sm:text-3xl">
             {step.title}
           </h3>
         </div>

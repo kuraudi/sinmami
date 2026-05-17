@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   CheckCircle2, ChevronLeft, Sparkles, AlertTriangle,
@@ -33,6 +33,7 @@ function formatValue(value: unknown): string {
 
 export function DraftPreviewClient({ draftId }: { draftId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const plan = useAppSelector((s) => s.session.plan);
   const { isGenerating } = useAppSelector((s) => s.draftFlow);
@@ -58,7 +59,7 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
       }
     }
     void load();
-  }, [draftId, plan]);
+  }, [draftId, plan, searchParams.get("t")]);
 
   async function handleGenerate() {
     try {
@@ -85,23 +86,24 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
       <div className="flex flex-col gap-5">
 
         {/* Шапка */}
-        <div className="flex items-center justify-between gap-4 rounded-3xl border border-(--line) bg-white px-6 py-4">
+        <div className="flex items-center justify-between gap-3 rounded-3xl border border-(--line) bg-white px-4 py-3 sm:px-6 sm:py-4">
           <Link
             href={`/drafts/${draftId}`}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-(--muted) transition hover:text-foreground"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-(--muted) transition hover:text-foreground"
           >
-            <ChevronLeft size={16} strokeWidth={2} />
-            Вернуться к заполнению
+            <ChevronLeft size={15} strokeWidth={2} />
+            <span className="hidden sm:inline">Вернуться к заполнению</span>
+            <span className="sm:hidden">Назад</span>
           </Link>
-          <div className="flex items-center gap-4 text-sm text-(--muted)">
+          <div className="flex items-center gap-2 text-xs text-(--muted) sm:gap-4 sm:text-sm">
             <span>
-              <span className="font-bold text-foreground">{answeredSteps.length}</span>/{steps.length} заполнено
+              <span className="font-bold text-foreground">{answeredSteps.length}</span>/{steps.length}
             </span>
-            <span>
+            <span className="hidden sm:inline">
               <span className="font-bold text-foreground">{answeredRequired.length}</span>/{totalRequired.length} обязательных
             </span>
             {draft && (
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
+              <span className="hidden rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600 sm:inline">
                 {documentTypeLabel(draft.documentType)}
               </span>
             )}
@@ -136,7 +138,7 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
                       const val = formatValue(step.value);
                       const isEmpty = val === "—";
                       return (
-                        <div key={step.stepKey} className="flex items-start gap-4 px-6 py-4">
+                        <div key={step.stepKey} className="flex items-start gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
                           <div className="mt-0.5 shrink-0">
                             {step.isAnswered
                               ? <CheckCircle2 size={15} strokeWidth={2} className="text-emerald-500" />
@@ -169,8 +171,8 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
             </div>
 
             {/* Нижняя панель */}
-            <div className="sticky bottom-4 rounded-3xl border border-(--line) bg-white px-6 py-4 shadow-lg shadow-black/5">
-              <div className="flex items-center justify-between gap-4">
+            <div className="sticky bottom-3 rounded-3xl border border-(--line) bg-white px-4 py-3 shadow-lg shadow-black/5 sm:bottom-4 sm:px-6 sm:py-4">
+              <div className="flex items-center justify-between gap-3 sm:gap-4">
                 <div className="text-sm">
                   {answeredRequired.length < totalRequired.length ? (
                     <span className="flex items-center gap-2 text-amber-700">

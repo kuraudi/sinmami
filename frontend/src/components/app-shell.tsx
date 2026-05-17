@@ -28,24 +28,24 @@ type AppShellProps = {
 export function AppShell({ eyebrow, title, subtitle, children }: AppShellProps) {
   return (
     <div className="subtle-grid min-h-dvh">
-      <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-5 md:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-3 py-4 sm:px-6 md:px-8 md:gap-5 md:py-5">
 
         {/* Navbar */}
-        <header className="flex items-center justify-between rounded-2xl border border-(--line) bg-white/90 px-5 py-3 shadow-sm backdrop-blur-md md:px-7">
-          <Link href="/" className="flex items-center gap-2.5">
+        <header className="flex items-center justify-between rounded-2xl border border-(--line) bg-white/90 px-4 py-3 shadow-sm backdrop-blur-md sm:px-5 md:px-7">
+          <Link href="/" className="flex items-center gap-2">
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-white"
+              className="flex h-7 w-7 items-center justify-center rounded-xl text-white sm:h-8 sm:w-8"
               style={{ background: "var(--gradient)" }}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M4 2h6l3 3v9a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="white" strokeWidth="1.4" strokeLinejoin="round"/>
                 <path d="M10 2v3h3M5.5 7h5M5.5 9.5h3.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
               </svg>
             </div>
-            <span className="text-base font-semibold tracking-tight text-(--foreground)">
+            <span className="text-sm font-semibold tracking-tight text-foreground sm:text-base">
               RentGen
             </span>
-            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-indigo-500">
+            <span className="hidden rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-indigo-500 sm:inline">
               MVP
             </span>
           </Link>
@@ -54,15 +54,15 @@ export function AppShell({ eyebrow, title, subtitle, children }: AppShellProps) 
         </header>
 
         {/* Page title */}
-        <div className="px-1 pt-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-indigo-500">
+        <div className="px-1 pt-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-indigo-500 sm:text-xs">
             {eyebrow}
           </p>
-          <h1 className="font-editorial mt-2 text-4xl leading-tight text-(--foreground) md:text-5xl">
+          <h1 className="font-editorial mt-1.5 text-3xl leading-tight text-foreground sm:text-4xl md:text-5xl">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-3 max-w-2xl text-base leading-7 text-(--muted)">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-(--muted) sm:text-base sm:leading-7">
               {subtitle}
             </p>
           )}

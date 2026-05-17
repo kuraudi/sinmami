@@ -120,12 +120,12 @@ export function DashboardClient() {
       >
 
         {/* ── Hero: два блока вплотную (Liveblocks-style) ── */}
-        <div className="relative lg:col-span-12 flex flex-col lg:flex-row overflow-hidden rounded-3xl"
+        <div className="relative lg:col-span-12 flex flex-col lg:flex-row rounded-3xl"
           style={{ boxShadow: "var(--shadow-lg)" }}>
 
           {/* Левая — белая */}
           <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-            className="relative flex flex-1 flex-col overflow-hidden bg-white p-8 md:p-12">
+            className="relative flex flex-1 flex-col overflow-hidden bg-white p-6 sm:p-8 md:p-12 rounded-t-3xl lg:rounded-l-3xl lg:rounded-tr-none">
 
             {/* Subtle dot grid */}
             <div className="pointer-events-none absolute inset-0"
@@ -152,14 +152,14 @@ export function DashboardClient() {
                 </span>
               </div>
 
-              <h2 className="font-editorial mt-6 text-4xl leading-tight text-foreground md:text-5xl">
+              <h2 className="font-editorial mt-5 text-3xl leading-tight text-foreground sm:text-4xl md:text-5xl">
                 Создать черновик<br />договора аренды
               </h2>
-              <p className="mt-4 text-sm leading-7 text-(--muted)">
+              <p className="mt-3 text-sm leading-7 text-(--muted)">
                 Ответьте на вопросы — система сформирует договор, проверит все данные и подготовит персональный гайд.
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 {FEATURES.map(({ icon: Icon, label }) => (
                   <span key={label}
                     className="inline-flex items-center gap-2 rounded-full border border-(--line) bg-white px-3 py-1.5 text-xs font-medium text-(--muted)">
@@ -199,7 +199,7 @@ export function DashboardClient() {
 
           {/* Правая — тёмная (Linear-style) */}
           <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 }}
-            className="relative flex flex-1 flex-col overflow-hidden p-8 md:p-12"
+            className="relative flex flex-1 flex-col overflow-hidden p-6 pb-10 sm:p-8 sm:pb-12 md:p-12 rounded-b-3xl lg:rounded-r-3xl lg:rounded-bl-none"
             style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)" }}>
 
             {/* 1px белая граница слева */}
@@ -224,7 +224,7 @@ export function DashboardClient() {
                 </span>
               </div>
 
-              <h3 className="font-editorial mt-6 text-3xl leading-snug">
+              <h3 className="font-editorial mt-5 text-2xl leading-snug sm:text-3xl">
                 Система делает<br />всё за вас
               </h3>
               <p className="mt-3 text-sm leading-6 text-white/55">
@@ -247,7 +247,7 @@ export function DashboardClient() {
                 ))}
               </div>
 
-              <div className="mt-auto pt-6">
+              <div className="mt-6 pt-0 lg:mt-auto lg:pt-6">
                 <div className="flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-xs text-white/55">
                   <Clock size={12} strokeWidth={2} />
                   Автоматическая генерация — от 2 до 5 минут
@@ -259,18 +259,18 @@ export function DashboardClient() {
 
         {/* ── Статы ── */}
         <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-          className="rounded-3xl border border-(--line) bg-white p-6 lg:col-span-12">
+          className="rounded-3xl border border-(--line) bg-white p-4 sm:p-6 lg:col-span-12">
           <div className="grid grid-cols-3 divide-x divide-(--line)">
             {STATS.map(({ icon: Icon, value, suffix, label }) => (
-              <div key={label} className="flex flex-col items-center gap-1 px-4 text-center">
-                <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-xl"
+              <div key={label} className="flex flex-col items-center gap-1 px-2 text-center sm:px-4">
+                <div className="mb-1 hidden h-9 w-9 items-center justify-center rounded-xl sm:flex"
                   style={{ background: "var(--gradient-soft)" }}>
                   <Icon size={16} strokeWidth={1.75} className="text-indigo-600" />
                 </div>
-                <span className="text-2xl font-bold tabular-nums text-foreground md:text-3xl">
+                <span className="text-xl font-bold tabular-nums text-foreground sm:text-2xl md:text-3xl">
                   <AnimatedCounter to={value} suffix={suffix} />
                 </span>
-                <span className="text-xs text-(--muted)">{label}</span>
+                <span className="text-[10px] text-(--muted) sm:text-xs">{label}</span>
               </div>
             ))}
           </div>
@@ -278,11 +278,11 @@ export function DashboardClient() {
 
         {/* ── Как это работает ── */}
         <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-          className="bento-card rounded-3xl p-6 lg:col-span-7">
+          className="bento-card rounded-3xl p-5 sm:p-6 lg:col-span-7">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-500">Как это работает</p>
           <div className="relative mt-5">
             <div className="absolute top-5 left-10 right-10 hidden border-t-2 border-dashed border-indigo-200 lg:block" />
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {HOW_IT_WORKS.map(({ step, icon: Icon, label, desc }, i) => (
                 <motion.div
                   key={step}
@@ -310,7 +310,7 @@ export function DashboardClient() {
 
         {/* ── Premium приложения ── */}
         <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-          className="bento-card rounded-3xl p-6 lg:col-span-5">
+          className="bento-card rounded-3xl p-5 sm:p-6 lg:col-span-5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span
@@ -342,7 +342,7 @@ export function DashboardClient() {
 
         {/* ── История ── */}
         <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-          className="bento-card rounded-3xl p-6 md:p-8 lg:col-span-12">
+          className="bento-card rounded-3xl p-5 sm:p-6 md:p-8 lg:col-span-12">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div

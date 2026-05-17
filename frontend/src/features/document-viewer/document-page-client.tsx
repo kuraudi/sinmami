@@ -127,8 +127,8 @@ export function DocumentPageClient({ documentId }: { documentId: string }) {
           lines={4}
         />
       ) : document ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <section className="paper-card min-w-0 overflow-hidden rounded-4xl p-6 md:p-8">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <section className="paper-card min-w-0 overflow-hidden rounded-4xl p-5 sm:p-6 md:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent-strong)]">
@@ -156,7 +156,7 @@ export function DocumentPageClient({ documentId }: { documentId: string }) {
               </span>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-2 sm:mt-8 sm:gap-3">
               <div className="inline-flex rounded-full border border-[var(--line)] bg-white/70 p-1 shadow-sm">
                 <button
                   type="button"
@@ -207,7 +207,7 @@ export function DocumentPageClient({ documentId }: { documentId: string }) {
                   key={documentPdfUrl}
                   title="PDF договора"
                   src={documentPdfUrl}
-                  className="h-[78vh] w-full bg-white"
+                  className="h-[60vh] w-full bg-white sm:h-[70vh] md:h-[78vh]"
                 />
               </div>
             ) : (

@@ -59,10 +59,10 @@ export function SiteFooter() {
         }}
       />
 
-      <div className="relative px-8 pt-12 md:px-14">
+      <div className="relative px-5 pt-10 sm:px-8 md:px-14">
 
         {/* Верхняя часть: лого + колонки */}
-        <div className="grid gap-12 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+        <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr_1fr] md:gap-12">
 
           {/* Бренд */}
           <div className="flex flex-col gap-5">
@@ -131,7 +131,7 @@ export function SiteFooter() {
         {/* Большой watermark-текст снизу */}
         <div className="relative mt-8 select-none overflow-hidden">
           <p
-            className="font-editorial text-[clamp(4rem,14vw,10rem)] uppercase leading-none tracking-tight"
+            className="font-editorial text-[clamp(3rem,12vw,10rem)] uppercase leading-none tracking-tight"
             style={{
               background: "linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%)",
               WebkitBackgroundClip: "text",
