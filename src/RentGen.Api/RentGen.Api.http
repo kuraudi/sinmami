@@ -1,0 +1,6 @@
+@RentGen.Api_HostAddress = http://localhost:5133
+
+GET {{RentGen.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

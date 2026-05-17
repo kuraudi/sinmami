@@ -1,0 +1,37 @@
+# IDE
+.idea/
+.vs/
+
+# Dotnet / tooling
+.dotnet/
+.nuget/
+.templateengine/
+bin/
+obj/
+TestResults/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/coverage/
+
+# Env / local secrets
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.*.local.json
+
+# Temp / local artifacts
+.tmp*
+*.log
+*.pid
+infra-build.log
+infra2.log
+.tmp_docx_extract/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,24 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY Directory.Build.props .
+COPY src/RentGen.Api/RentGen.Api.csproj src/RentGen.Api/
+COPY src/RentGen.Application/RentGen.Application.csproj src/RentGen.Application/
+COPY src/RentGen.Domain/RentGen.Domain.csproj src/RentGen.Domain/
+COPY src/RentGen.Infrastructure/RentGen.Infrastructure.csproj src/RentGen.Infrastructure/
+
+RUN dotnet restore src/RentGen.Api/RentGen.Api.csproj
+
+COPY src/ src/
+
+RUN dotnet publish src/RentGen.Api/RentGen.Api.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+ENV ASPNETCORE_URLS=http://+:5099
+EXPOSE 5099
+
+ENTRYPOINT ["dotnet", "RentGen.Api.dll"]
