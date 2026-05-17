@@ -65,6 +65,7 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
   const [aiQuestion, setAiQuestion] = useState("");
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [navOpen, setNavOpen] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     void dispatch(bootstrapDraftFlow(draftId));
@@ -321,6 +322,28 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                     }}
                   />
 
+                  {/* Согласие на последнем шаге или при валидном черновике */}
+                  {(isLastStep || validation?.isValid) && (
+                    <label className="mt-6 flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-indigo-600"
+                      />
+                      <span className="text-xs leading-5 text-(--muted)">
+                        Я ознакомился и соглашаюсь с{" "}
+                        <Link href="/legal/offer" target="_blank" className="text-indigo-600 underline hover:text-indigo-700">
+                          публичной офертой
+                        </Link>{" "}
+                        и{" "}
+                        <Link href="/legal/privacy" target="_blank" className="text-indigo-600 underline hover:text-indigo-700">
+                          политикой конфиденциальности
+                        </Link>
+                      </span>
+                    </label>
+                  )}
+
                   {/* Навигация */}
                   <div className="mt-8 flex items-center justify-between gap-3 border-t border-(--line) pt-6">
                     <button
@@ -347,8 +370,8 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                         <button
                           type="button"
                           onClick={handlePreviewDocument}
-                          disabled={isGenerating || isSaving}
-                          className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                          disabled={isGenerating || isSaving || !agreedToTerms}
+                          className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
                           style={{ background: "var(--gradient)" }}
                         >
                           {isGenerating ? "Формирую..." : lastGeneratedDocumentId ? "Обновить" : "Предпросмотр"}

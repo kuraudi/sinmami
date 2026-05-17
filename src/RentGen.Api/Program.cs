@@ -27,7 +27,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendDev", policy =>
     {
-        var origins = new List<string> { "http://127.0.0.1:3007", "http://localhost:3007", "http://127.0.0.1:3000", "http://localhost:3000" };
+        var origins = new List<string> { "http://127.0.0.1:3007", "http://localhost:3007", "http://127.0.0.1:3000", "http://localhost:3000", "http://202.182.112.90:3007" };
         var extraOrigin = builder.Configuration["Cors:AllowedOrigin"];
         if (!string.IsNullOrWhiteSpace(extraOrigin))
             origins.Add(extraOrigin);
