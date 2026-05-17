@@ -17,6 +17,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
 COPY --from=build /app/publish .
+COPY src/RentGen.Infrastructure/Scenarios/ ./Scenarios/
 
 ENV ASPNETCORE_URLS=http://+:5099
 EXPOSE 5099
