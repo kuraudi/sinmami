@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, ChevronLeft, ChevronRight,
-  FileText, Sparkles, ShieldCheck, ArrowRight,
+  FileText, Sparkles, ArrowRight, ShieldCheck,
   ArrowLeft, Menu, X,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -20,7 +20,6 @@ import {
   askDraftHelp,
   bootstrapDraftFlow,
   clearDraftFlow,
-  generateDraftDocument,
   saveDraftAnswer,
   validateDraftFlow,
 } from "@/store/slices/draft-flow-slice";
@@ -52,6 +51,7 @@ function groupSteps(steps: DraftStepItemResponse[]) {
 
 export function DraftFlowClient({ draftId }: { draftId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const plan = useAppSelector((state) => state.session.plan);
   const {
@@ -60,11 +60,13 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
     lastGeneratedDocumentId, steps, validation,
   } = useAppSelector((state) => state.draftFlow);
 
-  const [selectedStepKey, setSelectedStepKey] = useState<string | null>(null);
+  const fromPreview = searchParams.get("from") === "preview";
+  const [selectedStepKey, setSelectedStepKey] = useState<string | null>(searchParams.get("step"));
   const [draftValues, setDraftValues] = useState<Record<string, StepValue>>({});
   const [aiQuestion, setAiQuestion] = useState("");
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [navOpen, setNavOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
@@ -139,9 +141,13 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
 
   async function handleAdvance() {
     if (!selectedStep) return;
+    if (fromPreview) {
+      if (hasUnsavedChanges) await persistCurrentStep();
+      router.push(`/drafts/${draftId}/preview`);
+      return;
+    }
     let savedNextKey: string | null = null;
     if (hasUnsavedChanges) savedNextKey = await persistCurrentStep();
-    // приоритет: ответ сервера → след проблемный (если есть валидация) → первый незаполненный → следующий по порядку
     const nextProblem = findNextProblem(selectedStep.stepKey);
     const nextUnanswered = findNextUnanswered(currentStepIndex);
     const target = savedNextKey ?? nextProblem ?? nextUnanswered ?? nextStep?.stepKey ?? null;
@@ -165,7 +171,7 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
     } catch { /* error in redux */ }
   }
 
-  async function handlePreviewDocument() {
+  async function handleRequestPreview() {
     try {
       setLocalNotice(null);
       if (hasUnsavedChanges) await persistCurrentStep();
@@ -176,8 +182,8 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
         setLocalNotice("Сначала заполните обязательные поля, потом откройте предпросмотр документа.");
         return;
       }
-      const generated = await dispatch(generateDraftDocument(draftId)).unwrap();
-      router.push(`/documents/${generated.documentId}`);
+      setAgreedToTerms(false);
+      setShowConfirm(true);
     } catch { /* error in redux */ }
   }
 
@@ -322,30 +328,10 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                     }}
                   />
 
-                  {/* Согласие на последнем шаге или при валидном черновике */}
-                  {(isLastStep || validation?.isValid) && (
-                    <label className="mt-6 flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={agreedToTerms}
-                        onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 shrink-0 accent-indigo-600"
-                      />
-                      <span className="text-xs leading-5 text-(--muted)">
-                        Я ознакомился и соглашаюсь с{" "}
-                        <Link href="/legal/offer" target="_blank" className="text-indigo-600 underline hover:text-indigo-700">
-                          публичной офертой
-                        </Link>{" "}
-                        и{" "}
-                        <Link href="/legal/privacy" target="_blank" className="text-indigo-600 underline hover:text-indigo-700">
-                          политикой конфиденциальности
-                        </Link>
-                      </span>
-                    </label>
-                  )}
-
                   {/* Навигация */}
-                  <div className="mt-8 flex items-center justify-between gap-3 border-t border-(--line) pt-6">
+                  <div className="mt-8 flex flex-col gap-4 border-t border-(--line) pt-6">
+
+                    <div className="flex items-center justify-between gap-3">
                     <button
                       type="button"
                       onClick={() => previousStep && setSelectedStepKey(previousStep.stepKey)}
@@ -366,18 +352,8 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                         {isValidating ? "Проверяю..." : "Проверить"}
                       </button>
 
-                      {isLastStep || validation?.isValid ? (
-                        <button
-                          type="button"
-                          onClick={handlePreviewDocument}
-                          disabled={isGenerating || isSaving || !agreedToTerms}
-                          className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                          style={{ background: "var(--gradient)" }}
-                        >
-                          {isGenerating ? "Формирую..." : lastGeneratedDocumentId ? "Обновить" : "Предпросмотр"}
-                          <ArrowRight size={15} strokeWidth={2} />
-                        </button>
-                      ) : (
+                      {/* Из предпросмотра — только Сохранить */}
+                      {fromPreview ? (
                         <button
                           type="button"
                           onClick={handleAdvance}
@@ -385,10 +361,41 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                           className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                           style={{ background: "var(--gradient)" }}
                         >
-                          {isSaving ? "Сохраняю..." : "Дальше"}
-                          <ChevronRight size={16} strokeWidth={2} />
+                          {isSaving ? "Сохраняю..." : "Сохранить и вернуться"}
+                          <ArrowRight size={15} strokeWidth={2} />
                         </button>
+                      ) : (
+                        <>
+                          {/* Дальше — на всех шагах кроме последнего, пока валидация не прошла */}
+                          {!isLastStep && !validation?.isValid && (
+                            <button
+                              type="button"
+                              onClick={handleAdvance}
+                              disabled={isSaving}
+                              className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                              style={{ background: "var(--gradient)" }}
+                            >
+                              {isSaving ? "Сохраняю..." : "Дальше"}
+                              <ChevronRight size={16} strokeWidth={2} />
+                            </button>
+                          )}
+
+                          {/* Предпросмотр — на последнем шаге или когда валидация прошла */}
+                          {(isLastStep || validation?.isValid) && (
+                            <button
+                              type="button"
+                              onClick={handleRequestPreview}
+                              disabled={isValidating || isSaving}
+                              className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                              style={{ background: "var(--gradient)" }}
+                            >
+                              {isValidating ? "Проверяю..." : "Предпросмотр"}
+                              <ArrowRight size={15} strokeWidth={2} />
+                            </button>
+                          )}
+                        </>
                       )}
+                    </div>
                     </div>
                   </div>
 
@@ -523,6 +530,75 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
           </aside>
         </div>
       </div>
+
+      {/* Модалка подтверждения перед предпросмотром */}
+      <AnimatePresence>
+        {showConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4"
+            style={{ background: "rgba(15, 10, 40, 0.55)", backdropFilter: "blur(4px)" }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowConfirm(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.97 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl"
+            >
+              <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: "var(--gradient)" }}>
+                <ShieldCheck size={22} strokeWidth={1.75} className="text-white" />
+              </div>
+              <h2 className="text-center text-xl font-bold text-foreground mb-1.5">Почти готово</h2>
+              <p className="text-center text-sm text-(--muted) leading-6 mb-6">
+                Перед просмотром документа подтвердите согласие с условиями
+              </p>
+              <label className="flex items-start gap-3 cursor-pointer rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-4 mb-6 transition hover:bg-indigo-50">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-indigo-600"
+                />
+                <span className="text-sm leading-6 text-foreground">
+                  Я ознакомился и соглашаюсь с{" "}
+                  <Link href="/legal/offer" target="_blank" onClick={(e) => e.stopPropagation()} className="font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-800">
+                    публичной офертой
+                  </Link>{" "}
+                  и{" "}
+                  <Link href="/legal/privacy" target="_blank" onClick={(e) => e.stopPropagation()} className="font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-800">
+                    политикой конфиденциальности
+                  </Link>
+                </span>
+              </label>
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setShowConfirm(false); router.push(`/drafts/${draftId}/preview`); }}
+                  disabled={!agreedToTerms}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: "var(--gradient)" }}
+                >
+                  <ArrowRight size={15} strokeWidth={2} />
+                  Перейти к предпросмотру
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(false)}
+                  className="w-full rounded-2xl border border-(--line) bg-white px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-stone-50"
+                >
+                  Отмена
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </AppShell>
   );
 }
