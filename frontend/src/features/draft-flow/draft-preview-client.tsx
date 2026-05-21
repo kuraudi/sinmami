@@ -13,6 +13,7 @@ import { documentTypeLabel } from "@/lib/presenters";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { generateDraftDocument, validateDraftFlow } from "@/store/slices/draft-flow-slice";
 import { rentgenApi } from "@/lib/api/rentgen-api";
+import { addLocalDocumentId } from "@/lib/local-history";
 import type { DraftDetailsResponse, DraftStepItemResponse } from "@/types/api";
 
 function groupSteps(steps: DraftStepItemResponse[]) {
@@ -70,6 +71,7 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
         return;
       }
       const generated = await dispatch(generateDraftDocument(draftId)).unwrap();
+      addLocalDocumentId(generated.documentId);
       router.push(`/documents/${generated.documentId}`);
     } catch {
       setError("Не удалось сгенерировать документ.");

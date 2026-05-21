@@ -16,6 +16,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { rentgenApi } from "@/lib/api/rentgen-api";
+import { getLocalDocumentIds } from "@/lib/local-history";
 import { documentTypeLabel, formatDate } from "@/lib/presenters";
 import { useAppSelector } from "@/store/hooks";
 import { DocumentType, type DocumentListItemResponse, type DocumentTypeCard } from "@/types/api";
@@ -118,11 +119,15 @@ export function DashboardClient() {
       setIsLoading(true);
       setError(null);
       try {
-        const [types, history] = await Promise.all([
+        const localIds = getLocalDocumentIds();
+        const [types, allDocs] = await Promise.all([
           rentgenApi.getDocumentTypes(plan),
-          rentgenApi.getDocuments(plan),
+          localIds.length > 0 ? rentgenApi.getDocuments(plan) : Promise.resolve([]),
         ]);
-        if (!cancelled) { setDocumentTypes(types); setDocuments(history); }
+        if (!cancelled) {
+          setDocumentTypes(types);
+          setDocuments(allDocs.filter((d) => localIds.includes(d.documentId)));
+        }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Не удалось загрузить страницу.");
       } finally {
