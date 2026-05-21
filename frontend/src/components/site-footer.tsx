@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FileText, Mail, Zap, Shield, ArrowUpRight } from "lucide-react";
+import { FileText, Mail, Shield, ArrowUpRight, Send } from "lucide-react";
 
 const NAV = [
   {
     heading: "Продукт",
     links: [
       { label: "Создать договор", href: "/" },
-      { label: "Договор аренды", href: "/" },
-      { label: "Premium приложения", href: "/" },
+      { label: "10 ошибок в договоре", href: "/checklist" },
+      { label: "Premium приложения", href: "/premium" },
     ],
   },
   {
@@ -24,6 +24,7 @@ const NAV = [
     heading: "Поддержка",
     links: [
       { label: "support@rentgen.ru", href: "mailto:support@rentgen.ru" },
+      { label: "Telegram-канал", href: "https://t.me/rentgen_ru" },
     ],
   },
 ];
@@ -32,9 +33,10 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-8 overflow-hidden rounded-3xl"
+    <footer className="relative mt-8 overflow-hidden"
       style={{
         background: "linear-gradient(160deg, #0f0c29 0%, #1a1248 50%, #0f0c29 100%)",
+        boxShadow: "0 -8px 40px 0 rgba(79,70,229,0.18), 0 -2px 0 0 rgba(79,70,229,0.25)",
       }}
     >
       {/* Animated top border */}
@@ -59,7 +61,7 @@ export function SiteFooter() {
         }}
       />
 
-      <div className="relative px-5 pt-10 sm:px-8 md:px-14">
+      <div className="relative mx-auto max-w-7xl px-5 pt-7 sm:px-8 md:px-14">
 
         {/* Верхняя часть: лого + колонки */}
         <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr_1fr] md:gap-12">
@@ -95,15 +97,27 @@ export function SiteFooter() {
               </div>
             </div>
 
-            {/* Email */}
-            <a
-              href="mailto:support@rentgen.ru"
-              className="group mt-1 flex w-fit items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/75! transition hover:border-indigo-500/50 hover:text-white!"
-            >
-              <Mail size={12} strokeWidth={1.75} />
-              support@rentgen.ru
-              <ArrowUpRight size={10} className="opacity-0 transition group-hover:opacity-100" />
-            </a>
+            {/* Контакты */}
+            <div className="flex flex-col gap-2 mt-1">
+              <a
+                href="mailto:support@rentgen.ru"
+                className="group flex w-fit items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/75! transition hover:border-indigo-500/50 hover:text-white!"
+              >
+                <Mail size={12} strokeWidth={1.75} />
+                support@rentgen.ru
+                <ArrowUpRight size={10} className="opacity-0 transition group-hover:opacity-100" />
+              </a>
+              <a
+                href="https://t.me/rentgen_ru"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex w-fit items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/75! transition hover:border-sky-500/50 hover:text-white!"
+              >
+                <Send size={12} strokeWidth={1.75} />
+                Telegram-канал
+                <ArrowUpRight size={10} className="opacity-0 transition group-hover:opacity-100" />
+              </a>
+            </div>
           </div>
 
           {/* Колонки навигации */}
@@ -129,7 +143,8 @@ export function SiteFooter() {
         </div>
 
         {/* Большой watermark-текст снизу */}
-        <div className="relative mt-8 select-none overflow-hidden">
+        {/* Watermark — абсолютный, не влияет на высоту */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 select-none overflow-hidden">
           <p
             className="font-editorial text-[clamp(3rem,12vw,10rem)] uppercase leading-none tracking-tight"
             style={{
@@ -141,12 +156,12 @@ export function SiteFooter() {
           >
             RentGen
           </p>
+        </div>
 
-          {/* Копирайт поверх watermark */}
-          <div className="absolute bottom-3 left-0 right-0 flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-3">
-            <p className="text-xs text-white/25">© {year} RentGen. Все права защищены.</p>
-            <p className="text-xs text-white/15">ООО «RentGen» · ИНН *** · ОГРН ***</p>
-          </div>
+        {/* Копирайт */}
+        <div className="relative mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/6 py-4">
+          <p className="text-xs text-white/25">© {year} RentGen. Все права защищены.</p>
+          <p className="text-xs text-white/15">ООО «RentGen» · ИНН *** · ОГРН ***</p>
         </div>
 
       </div>

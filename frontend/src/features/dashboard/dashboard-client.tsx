@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform, useScroll, useInView } from "framer-motion";
 import {
   FileText, Sparkles, CheckCircle2, ArrowRight, Clock,
   ChevronRight, ShieldCheck, Layers, FileSignature,
@@ -54,14 +54,30 @@ const STATS = [
 ];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show:   { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 24 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
 const stagger = {
   hidden: {},
   show: { transition: { staggerChildren: 0.08 } },
 };
+
+function ScrollReveal({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial={{ opacity: 0, y: 32 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
+      transition={{ duration: 0.55, ease: "easeOut", delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export function DashboardClient() {
   const router = useRouter();
@@ -72,6 +88,29 @@ export function DashboardClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Mouse tracking for hero gradient
+  const heroRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const smoothX = useSpring(mouseX, { stiffness: 60, damping: 20 });
+  const smoothY = useSpring(mouseY, { stiffness: 60, damping: 20 });
+
+  const gradientX = useTransform(smoothX, [0, 1], ["0%", "100%"]);
+  const gradientY = useTransform(smoothY, [0, 1], ["0%", "100%"]);
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = heroRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseX.set((e.clientX - rect.left) / rect.width);
+    mouseY.set((e.clientY - rect.top) / rect.height);
+  }
+
+  // Parallax for background orbs
+  const { scrollY } = useScroll();
+  const orb1Y = useTransform(scrollY, [0, 600], [0, -80]);
+  const orb2Y = useTransform(scrollY, [0, 600], [0, -40]);
+  const orb3Y = useTransform(scrollY, [0, 600], [0, 60]);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,23 +158,38 @@ export function DashboardClient() {
         animate="show"
       >
 
-        {/* ── Hero: два блока вплотную (Liveblocks-style) ── */}
-        <div className="relative lg:col-span-12 flex flex-col lg:flex-row rounded-3xl"
-          style={{ boxShadow: "var(--shadow-lg)" }}>
+        {/* ── Hero ── */}
+        <div
+          ref={heroRef}
+          onMouseMove={handleMouseMove}
+          className="relative lg:col-span-12 flex flex-col lg:flex-row rounded-3xl overflow-hidden"
+          style={{ boxShadow: "var(--shadow-lg)" }}
+        >
+          {/* Mouse-following gradient glow */}
+          <motion.div
+            className="pointer-events-none absolute inset-0 z-0 opacity-40"
+            style={{
+              background: "radial-gradient(400px circle at var(--gx) var(--gy), rgba(99,102,241,0.18), transparent 60%)",
+              "--gx": gradientX,
+              "--gy": gradientY,
+            } as React.CSSProperties}
+          />
 
-          {/* Левая — белая */}
-          <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-            className="relative flex flex-1 flex-col overflow-hidden bg-white p-6 sm:p-8 md:p-12 rounded-t-3xl lg:rounded-l-3xl lg:rounded-tr-none">
+          {/* Левая — glass */}
+          <motion.div variants={fadeUp}
+            className="relative flex flex-1 flex-col p-6 sm:p-8 md:p-12 rounded-t-3xl lg:rounded-l-3xl lg:rounded-tr-none overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.82)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderRight: "1px solid rgba(255,255,255,0.5)" }}>
 
-            {/* Subtle dot grid */}
             <div className="pointer-events-none absolute inset-0"
               style={{
                 backgroundImage: "radial-gradient(rgba(79,70,229,0.12) 1px, transparent 1px)",
                 backgroundSize: "24px 24px",
               }} />
-            {/* Glow blob */}
-            <div className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full"
-              style={{ background: "radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%)", filter: "blur(24px)" }} />
+            <motion.div
+              style={{ y: orb1Y }}
+              className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full"
+              style2={{ background: "radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%)", filter: "blur(24px)" }}
+            />
 
             <div className="relative flex h-full flex-col">
               <div className="flex items-center gap-3">
@@ -161,11 +215,15 @@ export function DashboardClient() {
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {FEATURES.map(({ icon: Icon, label }) => (
-                  <span key={label}
-                    className="inline-flex items-center gap-2 rounded-full border border-(--line) bg-white px-3 py-1.5 text-xs font-medium text-(--muted)">
+                  <motion.span
+                    key={label}
+                    whileHover={{ scale: 1.04, y: -1 }}
+                    transition={{ duration: 0.15 }}
+                    className="inline-flex items-center gap-2 rounded-full border border-(--line) bg-white px-3 py-1.5 text-xs font-medium text-(--muted) cursor-default"
+                  >
                     <Icon size={13} strokeWidth={2} className="shrink-0 text-emerald-500" />
                     {label}
-                  </span>
+                  </motion.span>
                 ))}
               </div>
 
@@ -197,22 +255,24 @@ export function DashboardClient() {
             </div>
           </motion.div>
 
-          {/* Правая — тёмная (Linear-style) */}
-          <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 }}
-            className="relative flex flex-1 flex-col overflow-hidden p-6 pb-10 sm:p-8 sm:pb-12 md:p-12 rounded-b-3xl lg:rounded-r-3xl lg:rounded-bl-none"
+          {/* Правая — тёмная */}
+          <motion.div variants={fadeUp}
+            className="relative flex flex-1 flex-col p-6 pb-10 sm:p-8 sm:pb-12 md:p-12 rounded-b-3xl lg:rounded-r-3xl lg:rounded-bl-none overflow-hidden"
             style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)" }}>
 
-            {/* 1px белая граница слева */}
             <div className="absolute inset-y-0 left-0 w-px bg-white/10" />
-            {/* Dot grid тёмный */}
             <div className="pointer-events-none absolute inset-0"
               style={{
                 backgroundImage: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
                 backgroundSize: "24px 24px",
               }} />
-            {/* Glow blob */}
-            <div className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full"
-              style={{ background: "radial-gradient(circle, rgba(139,92,246,0.25) 0%, transparent 65%)", filter: "blur(40px)" }} />
+            <motion.div
+              style={{ y: orb2Y }}
+              className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full"
+            >
+              <div className="h-full w-full rounded-full"
+                style={{ background: "radial-gradient(circle, rgba(139,92,246,0.25) 0%, transparent 65%)", filter: "blur(40px)" }} />
+            </motion.div>
 
             <div className="relative flex h-full flex-col text-white">
               <div className="flex items-center justify-between">
@@ -237,7 +297,8 @@ export function DashboardClient() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + i * 0.1, duration: 0.35 }}
-                    className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 transition hover:bg-white/15"
+                    whileHover={{ x: 4 }}
+                    className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 transition hover:bg-white/15 cursor-default"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500/25">
                       <Icon size={15} strokeWidth={1.75} className="text-indigo-300" />
@@ -258,8 +319,7 @@ export function DashboardClient() {
         </div>
 
         {/* ── Статы ── */}
-        <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-          className="rounded-3xl border border-(--line) bg-white p-4 sm:p-6 lg:col-span-12">
+        <ScrollReveal className="rounded-3xl border border-(--line) bg-white p-4 sm:p-6 lg:col-span-12">
           <div className="grid grid-cols-3 divide-x divide-(--line)">
             {STATS.map(({ icon: Icon, value, suffix, label }) => (
               <div key={label} className="flex flex-col items-center gap-1 px-2 text-center sm:px-4">
@@ -274,11 +334,10 @@ export function DashboardClient() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </ScrollReveal>
 
         {/* ── Как это работает ── */}
-        <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-          className="bento-card rounded-3xl p-5 sm:p-6 lg:col-span-7">
+        <ScrollReveal className="bento-card rounded-3xl p-5 sm:p-6 lg:col-span-7" delay={0.05}>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-500">Как это работает</p>
           <div className="relative mt-5">
             <div className="absolute top-5 left-10 right-10 hidden border-t-2 border-dashed border-indigo-200 lg:block" />
@@ -287,16 +346,19 @@ export function DashboardClient() {
                 <motion.div
                   key={step}
                   initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.12, duration: 0.4 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.12, duration: 0.4 }}
                   className="relative flex flex-col gap-3"
                 >
-                  <div
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 3 }}
+                    transition={{ duration: 0.2 }}
                     className="relative z-10 flex h-10 w-10 items-center justify-center rounded-2xl text-white shadow-sm"
                     style={{ background: "var(--gradient)" }}
                   >
                     <Icon size={16} strokeWidth={1.75} />
-                  </div>
+                  </motion.div>
                   <div>
                     <span className="text-[10px] font-bold tabular-nums text-indigo-400">{step}</span>
                     <p className="mt-0.5 text-sm font-semibold text-foreground">{label}</p>
@@ -306,11 +368,10 @@ export function DashboardClient() {
               ))}
             </div>
           </div>
-        </motion.div>
+        </ScrollReveal>
 
         {/* ── Premium приложения ── */}
-        <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-          className="bento-card rounded-3xl p-5 sm:p-6 lg:col-span-5">
+        <ScrollReveal className="bento-card rounded-3xl p-5 sm:p-6 lg:col-span-5" delay={0.1}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span
@@ -328,21 +389,22 @@ export function DashboardClient() {
             {PREMIUM_ITEMS.map(({ icon: Icon, name }, i) => (
               <motion.div
                 key={name}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.15 + i * 0.06, duration: 0.3 }}
-                className="flex items-center gap-2 rounded-xl border border-(--line) bg-background px-3 py-2.5"
+                initial={{ opacity: 0, scale: 0.92 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06, duration: 0.3 }}
+                whileHover={{ scale: 1.03, y: -1 }}
+                className="flex items-center gap-2 rounded-xl border border-(--line) bg-background px-3 py-2.5 cursor-default"
               >
                 <Icon size={13} strokeWidth={1.75} className="shrink-0 text-indigo-400" />
                 <span className="text-xs font-medium text-(--muted)">{name}</span>
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </ScrollReveal>
 
         {/* ── История ── */}
-        <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: "easeOut" }}
-          className="bento-card rounded-3xl p-5 sm:p-6 md:p-8 lg:col-span-12">
+        <ScrollReveal className="bento-card rounded-3xl p-5 sm:p-6 md:p-8 lg:col-span-12" delay={0.05}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div
@@ -389,7 +451,7 @@ export function DashboardClient() {
                   type="button"
                   onClick={() => router.push(`/documents/${doc.documentId}`)}
                   className="group cursor-pointer rounded-2xl border border-(--line) bg-background px-5 py-4 text-left transition hover:border-indigo-300 hover:shadow-md active:scale-[0.99]"
-                  whileHover={{ y: -2 }}
+                  whileHover={{ y: -3, boxShadow: "0 8px 30px rgba(79,70,229,0.12)" }}
                   transition={{ duration: 0.2 }}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -415,7 +477,7 @@ export function DashboardClient() {
               ))}
             </motion.div>
           )}
-        </motion.div>
+        </ScrollReveal>
 
       </motion.div>
 

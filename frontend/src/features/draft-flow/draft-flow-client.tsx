@@ -281,7 +281,7 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
         </div>
 
         {/* ── Основная область: форма + помощник ── */}
-        <div className="grid gap-4 md:gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className={`grid gap-4 md:gap-5 ${plan === "Premium" ? "lg:grid-cols-[minmax(0,1fr)_320px]" : ""}`}>
 
           {/* Центр: текущий шаг */}
           <div className="min-w-0">
@@ -456,8 +456,8 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
             )}
           </div>
 
-          {/* Правая: помощник */}
-          <aside className="lg:sticky lg:top-6 lg:self-start">
+          {/* Правая: помощник (только Premium) */}
+          {plan === "Premium" && <aside className="lg:sticky lg:top-6 lg:self-start">
             <div className="rounded-3xl border border-(--line) bg-white overflow-hidden">
               <div className="flex items-center gap-3 border-b border-(--line) px-5 py-4"
                 style={{ background: "linear-gradient(135deg, #f0f0ff 0%, #f5f3ff 100%)" }}>
@@ -527,7 +527,7 @@ export function DraftFlowClient({ draftId }: { draftId: string }) {
                 </AnimatePresence>
               </div>
             </div>
-          </aside>
+          </aside>}
         </div>
       </div>
 

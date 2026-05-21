@@ -27,11 +27,28 @@ type AppShellProps = {
 
 export function AppShell({ eyebrow, title, subtitle, children }: AppShellProps) {
   return (
-    <div className="subtle-grid min-h-dvh">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-3 py-4 sm:px-6 md:px-8 md:gap-5 md:py-5">
+    <div className="subtle-grid min-h-dvh relative overflow-x-hidden">
+
+      {/* Aurora background blobs */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div
+          className="aurora-blob-1 absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full opacity-30"
+          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)", filter: "blur(80px)" }}
+        />
+        <div
+          className="aurora-blob-2 absolute top-1/3 -right-40 h-[500px] w-[500px] rounded-full opacity-25"
+          style={{ background: "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)", filter: "blur(90px)" }}
+        />
+        <div
+          className="aurora-blob-3 absolute -bottom-20 left-1/3 h-[400px] w-[400px] rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, rgba(79,70,229,0.35) 0%, transparent 70%)", filter: "blur(70px)" }}
+        />
+      </div>
+
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-4 px-3 py-4 sm:px-6 md:px-8 md:gap-5 md:py-5">
 
         {/* Navbar */}
-        <header className="flex items-center justify-between rounded-2xl border border-(--line) bg-white/90 px-4 py-3 shadow-sm backdrop-blur-md sm:px-5 md:px-7">
+        <header className="flex items-center justify-between rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-sm backdrop-blur-xl sm:px-5 md:px-7" style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.8) inset, 0 4px 20px rgba(79,70,229,0.08)" }}>
           <Link href="/" className="flex items-center gap-2">
             <div
               className="flex h-7 w-7 items-center justify-center rounded-xl text-white sm:h-8 sm:w-8"
@@ -70,8 +87,8 @@ export function AppShell({ eyebrow, title, subtitle, children }: AppShellProps) 
 
         {children}
 
-        <SiteFooter />
       </div>
+      <SiteFooter />
     </div>
   );
 }

@@ -80,12 +80,42 @@ button { cursor: pointer; }
   font-family: 'EB Garamond', Georgia, serif;
 }
 
+/* Aurora blobs */
+@keyframes aurora-1 {
+  0%   { transform: translate(0%, 0%) scale(1); }
+  33%  { transform: translate(8%, -12%) scale(1.12); }
+  66%  { transform: translate(-6%, 8%) scale(0.95); }
+  100% { transform: translate(0%, 0%) scale(1); }
+}
+@keyframes aurora-2 {
+  0%   { transform: translate(0%, 0%) scale(1); }
+  40%  { transform: translate(-10%, 6%) scale(1.08); }
+  70%  { transform: translate(7%, -10%) scale(0.92); }
+  100% { transform: translate(0%, 0%) scale(1); }
+}
+@keyframes aurora-3 {
+  0%   { transform: translate(0%, 0%) scale(1); }
+  25%  { transform: translate(6%, 10%) scale(1.1); }
+  75%  { transform: translate(-8%, -6%) scale(0.9); }
+  100% { transform: translate(0%, 0%) scale(1); }
+}
+
+.aurora-blob-1 {
+  animation: aurora-1 18s ease-in-out infinite;
+}
+.aurora-blob-2 {
+  animation: aurora-2 22s ease-in-out infinite;
+}
+.aurora-blob-3 {
+  animation: aurora-3 26s ease-in-out infinite;
+}
+
 /* Grid background */
 .subtle-grid {
   background-color: #EEF2FF;
   background-image:
-    linear-gradient(rgba(79,70,229,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(79,70,229,0.06) 1px, transparent 1px);
+    linear-gradient(rgba(79,70,229,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,70,229,0.05) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
@@ -98,22 +128,27 @@ button { cursor: pointer; }
 }
 
 .paper-card {
-  background: var(--surface);
+  background: rgba(255,255,255,0.80);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--shadow-card);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255,255,255,0.6);
 }
 
 .bento-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-card);
-  transition: box-shadow 220ms ease, transform 220ms ease, border-color 220ms ease;
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(79,70,229,0.04) inset;
+  transition: box-shadow 220ms ease, transform 220ms ease, border-color 220ms ease, background 220ms ease;
 }
 
 .bento-card:hover {
+  background: rgba(255,255,255,0.88);
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
-  border-color: rgba(79,70,229,0.2);
+  border-color: rgba(79,70,229,0.25);
 }
 
 .bento-card-dark {

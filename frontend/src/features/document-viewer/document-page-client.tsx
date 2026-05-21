@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingPanel } from "@/components/ui/loading-panel";
@@ -49,6 +50,7 @@ export function DocumentPageClient({ documentId }: { documentId: string }) {
   const [isDownloadingDocumentPdf, setIsDownloadingDocumentPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<"pdf" | "text">("pdf");
+  const [showUpsellPopup, setShowUpsellPopup] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
@@ -90,6 +92,7 @@ export function DocumentPageClient({ documentId }: { documentId: string }) {
       setIsDownloadingDocumentPdf(true);
       const result = await rentgenApi.downloadDocumentPdf(documentId, plan);
       triggerDownload(result.blob, result.fileName);
+      setTimeout(() => setShowUpsellPopup(true), 1500);
     } catch (downloadError) {
       setError(
         downloadError instanceof Error
@@ -331,6 +334,72 @@ export function DocumentPageClient({ documentId }: { documentId: string }) {
           description="Проверьте ссылку или сформируйте договор заново."
         />
       )}
+
+      {/* Попап апселла после скачивания */}
+      <AnimatePresence>
+        {showUpsellPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4"
+            style={{ background: "rgba(15,10,40,0.6)", backdropFilter: "blur(4px)" }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowUpsellPopup(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 32, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="w-full max-w-md rounded-3xl bg-white overflow-hidden shadow-2xl"
+            >
+              {/* Шапка */}
+              <div className="px-6 py-5 text-white" style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%)" }}>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300 mb-1">Защитите сделку</p>
+                <h3 className="text-xl font-bold leading-snug">Договор готов — но этого может быть мало</h3>
+                <p className="mt-2 text-sm text-white/70 leading-6">Без акта приёма-передачи не докажете состояние квартиры. Без описи имущества — кто что сломал.</p>
+              </div>
+
+              {/* Список */}
+              <div className="px-6 py-5">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-500 mb-3">Добавьте защиту от штрафов</p>
+                <div className="flex flex-col gap-2">
+                  {[
+                    "Акт приёма-передачи квартиры",
+                    "Опись имущества",
+                    "График арендных платежей",
+                    "Гайд по сделке с пошаговой инструкцией",
+                  ].map((item) => (
+                    <div key={item} className="flex items-center gap-3 rounded-xl bg-indigo-50 px-3 py-2.5">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white text-[10px] font-bold">✓</span>
+                      <span className="text-sm text-foreground">{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 flex flex-col gap-2">
+                  <Link
+                    href="/premium"
+                    onClick={() => setShowUpsellPopup(false)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition hover:opacity-90"
+                    style={{ background: "var(--gradient)" }}
+                  >
+                    Подключить Premium — полный пакет
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setShowUpsellPopup(false)}
+                    className="w-full rounded-2xl border border-[var(--line)] py-3 text-sm font-semibold text-[var(--muted)] transition hover:bg-stone-50"
+                  >
+                    Пока достаточно базового договора
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </AppShell>
   );
 }
