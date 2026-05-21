@@ -186,9 +186,8 @@ export function DashboardClient() {
                 backgroundSize: "24px 24px",
               }} />
             <motion.div
-              style={{ y: orb1Y }}
+              style={{ y: orb1Y, background: "radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%)", filter: "blur(24px)" }}
               className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full"
-              style2={{ background: "radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%)", filter: "blur(24px)" }}
             />
 
             <div className="relative flex h-full flex-col">
