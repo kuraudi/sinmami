@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Lock, CheckCircle2, Sparkles, ShieldCheck, Wifi } from "lucide-react";
+import { X, Lock, CheckCircle2, Sparkles, ShieldCheck, Eye, EyeOff } from "lucide-react";
 
 type Step = "form" | "processing" | "success";
 
@@ -19,36 +19,46 @@ function formatExpiry(v: string) {
   if (d.length >= 3) return d.slice(0, 2) + "/" + d.slice(2);
   return d;
 }
-
 function detectCardType(num: string): "visa" | "mc" | "mir" | null {
   const d = num.replace(/\s/g, "");
   if (d.startsWith("4")) return "visa";
-  if (d.startsWith("5") || d.startsWith("2")) return "mc";
-  if (d.startsWith("2200") || d.startsWith("2201") || d.startsWith("2202") || d.startsWith("2203") || d.startsWith("2204")) return "mir";
+  if (/^5[1-5]/.test(d) || /^2[2-7]/.test(d)) return "mc";
+  if (/^220[0-4]/.test(d)) return "mir";
   return null;
 }
 
-function CardLogo({ type }: { type: "visa" | "mc" | "mir" | null }) {
-  if (type === "visa") return (
-    <svg viewBox="0 0 48 16" className="h-4 w-10 fill-current text-blue-700" aria-label="Visa">
-      <text x="0" y="13" fontFamily="Arial" fontWeight="bold" fontSize="14" letterSpacing="-0.5">VISA</text>
+function VisaLogo() {
+  return (
+    <svg viewBox="0 0 48 16" className="h-4" style={{ width: 44 }}>
+      <text x="0" y="13" fontFamily="Arial Black, Arial" fontWeight="900" fontSize="15" fill="#1a1f71" letterSpacing="-0.5">VISA</text>
     </svg>
   );
-  if (type === "mc") return (
-    <svg viewBox="0 0 38 24" className="h-5 w-8" aria-label="Mastercard">
+}
+function MastercardLogo() {
+  return (
+    <svg viewBox="0 0 38 24" style={{ height: 20, width: 32 }}>
       <circle cx="14" cy="12" r="10" fill="#EB001B" />
       <circle cx="24" cy="12" r="10" fill="#F79E1B" />
-      <path d="M19 5.3a10 10 0 010 13.4A10 10 0 0119 5.3z" fill="#FF5F00" />
+      <path d="M19 4.8a10 10 0 010 14.4A10 10 0 0119 4.8z" fill="#FF5F00" />
     </svg>
   );
-  if (type === "mir") return (
-    <svg viewBox="0 0 48 16" className="h-4 w-10" aria-label="МИР">
-      <rect width="48" height="16" rx="3" fill="#00A76F" />
-      <text x="4" y="12" fontFamily="Arial" fontWeight="bold" fontSize="10" fill="white">МИР</text>
-    </svg>
-  );
-  return null;
 }
+function MirLogo() {
+  return (
+    <svg viewBox="0 0 54 20" style={{ height: 20, width: 40 }}>
+      <rect width="54" height="20" rx="4" fill="#00A76F" />
+      <text x="6" y="14" fontFamily="Arial" fontWeight="bold" fontSize="10" fill="white">МИР</text>
+    </svg>
+  );
+}
+
+const PROCESSING_MSGS = [
+  "Устанавливаем защищённое соединение...",
+  "Проверяем реквизиты карты...",
+  "Отправляем запрос в банк-эмитент...",
+  "Ожидаем подтверждение от банка...",
+  "Завершаем транзакцию...",
+];
 
 export function PaymentModal({ onClose, onSuccess }: Props) {
   const [step, setStep] = useState<Step>("form");
@@ -56,8 +66,10 @@ export function PaymentModal({ onClose, onSuccess }: Props) {
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
   const [name, setName] = useState("");
+  const [showCvv, setShowCvv] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [processingMsg, setProcessingMsg] = useState("Устанавливаем защищённое соединение...");
+  const [processingIdx, setProcessingIdx] = useState(0);
+  const [txnId] = useState(() => Math.random().toString(36).slice(2, 12).toUpperCase());
 
   const cardType = detectCardType(card);
 
@@ -69,29 +81,27 @@ export function PaymentModal({ onClose, onSuccess }: Props) {
     return () => document.removeEventListener("keydown", handleKey);
   }, [onClose, step]);
 
-  function handlePay() {
-    const digits = card.replace(/\s/g, "");
-    if (digits.length < 16) { setError("Введите полный номер карты"); return; }
-    if (expiry.length < 5) { setError("Введите срок действия карты"); return; }
-    if (cvv.length < 3) { setError("Введите CVV"); return; }
-    if (!name.trim()) { setError("Введите имя держателя карты"); return; }
-    setError(null);
-    setStep("processing");
-
-    const msgs = [
-      "Устанавливаем защищённое соединение...",
-      "Проверяем данные карты...",
-      "Отправляем запрос в банк...",
-      "Ожидаем подтверждение...",
-    ];
+  useEffect(() => {
+    if (step !== "processing") return;
+    setProcessingIdx(0);
     let i = 0;
     const iv = setInterval(() => {
       i++;
-      if (i < msgs.length) setProcessingMsg(msgs[i]);
+      if (i < PROCESSING_MSGS.length) setProcessingIdx(i);
       else clearInterval(iv);
-    }, 600);
+    }, 520);
+    const done = setTimeout(() => { clearInterval(iv); setStep("success"); }, 3000);
+    return () => { clearInterval(iv); clearTimeout(done); };
+  }, [step]);
 
-    setTimeout(() => { clearInterval(iv); setStep("success"); }, 2800);
+  function handlePay() {
+    const digits = card.replace(/\s/g, "");
+    if (digits.length < 16) { setError("Введите полный номер карты"); return; }
+    if (expiry.length < 5) { setError("Введите срок действия"); return; }
+    if (cvv.length < 3) { setError("Введите CVV/CVC код"); return; }
+    if (!name.trim()) { setError("Введите имя держателя карты"); return; }
+    setError(null);
+    setStep("processing");
   }
 
   return (
@@ -100,77 +110,94 @@ export function PaymentModal({ onClose, onSuccess }: Props) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4"
-      style={{ background: "rgba(8,6,24,0.72)", backdropFilter: "blur(8px)" }}
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-3 sm:p-4"
+      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
       onClick={(e) => { if (e.target === e.currentTarget && step === "form") onClose(); }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 40, scale: 0.96 }}
+        initial={{ opacity: 0, y: 32, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 24, scale: 0.97 }}
-        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-sm overflow-hidden rounded-2xl shadow-2xl"
-        style={{ background: "#f8f9fb" }}
+        exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-[420px] overflow-hidden rounded-2xl shadow-2xl"
+        style={{ background: "#ffffff" }}
       >
         <AnimatePresence mode="wait">
 
-          {/* ── Форма ── */}
+          {/* ══ ФОРМА ══ */}
           {step === "form" && (
             <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
 
-              {/* Шапка эквайринга */}
-              <div className="flex items-center justify-between border-b border-stone-200 bg-white px-5 py-3.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg"
-                    style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)" }}>
-                    <ShieldCheck size={14} strokeWidth={2} className="text-white" />
+              {/* Топ-бар банка */}
+              <div className="flex items-center justify-between border-b px-5 py-3" style={{ borderColor: "#e5e7eb", background: "#fafafa" }}>
+                <div className="flex items-center gap-3">
+                  {/* Псевдологотип банка */}
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: "linear-gradient(135deg,#0f4c9e,#1a73e8)" }}>
+                    <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
+                      <rect x="1" y="4" width="14" height="9" rx="1.5" stroke="white" strokeWidth="1.2" />
+                      <path d="M1 7h14" stroke="white" strokeWidth="1.2" />
+                    </svg>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-stone-800 leading-none">RentGen Pay</p>
-                    <p className="text-[10px] text-stone-400 leading-none mt-0.5">Защищённый платёж</p>
+                    <p className="text-[11px] font-bold leading-none text-gray-800">РентГен Банк</p>
+                    <p className="mt-0.5 text-[10px] leading-none text-gray-400">Защищённая оплата</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[10px] font-semibold text-emerald-700">SSL</span>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-1 rounded-full border px-2 py-0.5" style={{ borderColor: "#d1fae5", background: "#f0fdf4" }}>
+                    <ShieldCheck size={10} strokeWidth={2.5} className="text-emerald-600" />
+                    <span className="text-[10px] font-bold text-emerald-700">SSL</span>
                   </div>
-                  <button type="button" onClick={onClose} aria-label="Закрыть"
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-100 text-stone-400 transition hover:bg-stone-200">
-                    <X size={12} strokeWidth={2.5} />
-                  </button>
+                  {step === "form" && (
+                    <button type="button" onClick={onClose}
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
+                      <X size={13} strokeWidth={2.5} />
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Сумма */}
-              <div className="border-b border-stone-200 bg-white px-5 py-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">К оплате</p>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-stone-900">299 ₽</span>
-                  <span className="text-sm text-stone-400">· Премиум договор</span>
+              {/* Сумма и получатель */}
+              <div className="border-b px-5 py-4" style={{ borderColor: "#f3f4f6" }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">К оплате</p>
+                    <p className="mt-0.5 text-[28px] font-bold leading-none text-gray-900">299 <span className="text-xl">₽</span></p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold text-gray-700">RentGen</p>
+                    <p className="text-[11px] text-gray-400">Премиум договор</p>
+                    <p className="mt-1 text-[10px] text-gray-300">ID: {txnId.slice(0, 8)}</p>
+                  </div>
                 </div>
-                <p className="mt-1 text-xs text-stone-400">Одноразовый платёж · RentGen Premium</p>
               </div>
 
               {/* Форма карты */}
-              <div className="px-5 py-5 flex flex-col gap-4">
+              <div className="px-5 py-4 flex flex-col gap-3">
+
                 {/* Номер карты */}
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-stone-500">Номер карты</label>
+                  <label className="mb-1 block text-[11px] font-semibold text-gray-500">Номер карты</label>
                   <div className="relative">
                     <input
                       type="text"
                       inputMode="numeric"
+                      autoComplete="cc-number"
                       placeholder="0000 0000 0000 0000"
                       value={card}
                       onChange={(e) => setCard(formatCardNumber(e.target.value))}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-3 pl-4 pr-12 text-sm font-mono text-stone-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border bg-gray-50 py-3 pl-4 pr-14 font-mono text-sm text-gray-900 outline-none transition"
+                      style={{ borderColor: "#d1d5db" }}
+                      onFocus={(e) => (e.target.style.borderColor = "#6366f1")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
                     />
-                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-                      {cardType ? <CardLogo type={cardType} /> : (
-                        <div className="flex gap-1">
-                          <div className="h-4 w-6 rounded-sm bg-stone-200" />
-                          <div className="h-4 w-6 rounded-sm bg-stone-200" />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {cardType === "visa" && <VisaLogo />}
+                      {cardType === "mc" && <MastercardLogo />}
+                      {cardType === "mir" && <MirLogo />}
+                      {!cardType && (
+                        <div className="flex gap-1 opacity-30">
+                          <div className="h-5 w-7 rounded-sm border border-gray-300" />
                         </div>
                       )}
                     </div>
@@ -179,152 +206,189 @@ export function PaymentModal({ onClose, onSuccess }: Props) {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-stone-500">Срок действия</label>
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">Срок действия</label>
                     <input
                       type="text"
                       inputMode="numeric"
+                      autoComplete="cc-exp"
                       placeholder="ММ / ГГ"
                       value={expiry}
                       onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                      className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-mono text-stone-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border bg-gray-50 px-4 py-3 font-mono text-sm text-gray-900 outline-none transition"
+                      style={{ borderColor: "#d1d5db" }}
+                      onFocus={(e) => (e.target.style.borderColor = "#6366f1")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-stone-500">CVV / CVC</label>
-                    <input
-                      type="password"
-                      inputMode="numeric"
-                      placeholder="•••"
-                      maxLength={4}
-                      value={cvv}
-                      onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-mono text-stone-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                    />
+                    <label className="mb-1 block text-[11px] font-semibold text-gray-500">CVV / CVC</label>
+                    <div className="relative">
+                      <input
+                        type={showCvv ? "text" : "password"}
+                        inputMode="numeric"
+                        autoComplete="cc-csc"
+                        placeholder="•••"
+                        maxLength={4}
+                        value={cvv}
+                        onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        className="w-full rounded-xl border bg-gray-50 py-3 pl-4 pr-10 font-mono text-sm text-gray-900 outline-none transition"
+                        style={{ borderColor: "#d1d5db" }}
+                        onFocus={(e) => (e.target.style.borderColor = "#6366f1")}
+                        onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                      />
+                      <button type="button" tabIndex={-1}
+                        onClick={() => setShowCvv(!showCvv)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        {showCvv ? <EyeOff size={14} strokeWidth={1.75} /> : <Eye size={14} strokeWidth={1.75} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-stone-500">Имя держателя карты</label>
+                  <label className="mb-1 block text-[11px] font-semibold text-gray-500">Имя держателя</label>
                   <input
                     type="text"
+                    autoComplete="cc-name"
                     placeholder="IVAN IVANOV"
                     value={name}
                     onChange={(e) => setName(e.target.value.toUpperCase())}
-                    className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-mono uppercase text-stone-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-xl border bg-gray-50 px-4 py-3 font-mono text-sm uppercase text-gray-900 outline-none transition"
+                    style={{ borderColor: "#d1d5db" }}
+                    onFocus={(e) => (e.target.style.borderColor = "#6366f1")}
+                    onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
                   />
                 </div>
 
                 {error && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-700">{error}</div>
+                  <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-xs text-red-700">{error}</div>
                 )}
 
                 <button
                   type="button"
                   onClick={handlePay}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white shadow-lg transition hover:opacity-90 active:scale-[0.98]"
-                  style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "#ffffff", boxShadow: "0 4px 20px rgba(79,70,229,0.45)" }}
+                  className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
+                  style={{ background: "linear-gradient(135deg,#1a73e8,#0f4c9e)", color: "#fff", boxShadow: "0 4px 16px rgba(26,115,232,0.35)" }}
                 >
                   <Lock size={13} strokeWidth={2.5} />
                   Оплатить 299 ₽
                 </button>
 
                 <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-stone-200" />
-                  <span className="text-[11px] text-stone-400">или</span>
-                  <div className="h-px flex-1 bg-stone-200" />
+                  <div className="h-px flex-1 bg-gray-100" />
+                  <span className="text-[11px] text-gray-400">или</span>
+                  <div className="h-px flex-1 bg-gray-100" />
                 </div>
 
                 <button
                   type="button"
                   onClick={() => { setError(null); setStep("success"); }}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition hover:bg-gray-50"
+                  style={{ borderColor: "#e5e7eb", color: "#374151" }}
                 >
-                  <CheckCircle2 size={14} strokeWidth={2} />
+                  <CheckCircle2 size={14} strokeWidth={2} className="text-emerald-500" />
                   Я уже оплатил
                 </button>
               </div>
 
-              {/* Подвал */}
-              <div className="border-t border-stone-200 bg-white px-5 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[10px] text-stone-400">
-                  <Wifi size={11} strokeWidth={2} />
-                  Данные передаются по TLS 1.3
-                </div>
+              {/* Футер с логотипами */}
+              <div className="border-t px-5 py-3 flex items-center justify-between" style={{ borderColor: "#f3f4f6", background: "#fafafa" }}>
+                <p className="text-[10px] text-gray-400">Данные защищены · TLS 1.3</p>
                 <div className="flex items-center gap-2">
-                  <div className="h-4 w-7 rounded-sm bg-blue-700 flex items-center justify-center">
-                    <span className="text-[7px] font-bold text-white">VISA</span>
-                  </div>
-                  <svg viewBox="0 0 28 18" className="h-4 w-7" aria-label="Mastercard">
-                    <circle cx="10" cy="9" r="7" fill="#EB001B" />
-                    <circle cx="18" cy="9" r="7" fill="#F79E1B" />
-                    <path d="M14 3.8a7 7 0 010 10.4A7 7 0 0114 3.8z" fill="#FF5F00" />
-                  </svg>
-                  <div className="h-4 w-8 rounded-sm bg-green-600 flex items-center justify-center">
-                    <span className="text-[7px] font-bold text-white">МИР</span>
-                  </div>
+                  <VisaLogo />
+                  <MastercardLogo />
+                  <MirLogo />
+                  {/* Иконка 3DS */}
+                  <div className="rounded border px-1.5 py-0.5 text-[8px] font-bold" style={{ borderColor: "#d1d5db", color: "#6b7280" }}>3DS</div>
+                  {/* ЦБ РФ */}
+                  <div className="rounded border px-1.5 py-0.5 text-[8px] font-bold" style={{ borderColor: "#d1d5db", color: "#6b7280" }}>ЦБ РФ</div>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* ── Обработка ── */}
+          {/* ══ ОБРАБОТКА ══ */}
           {step === "processing" && (
             <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-5 bg-white px-8 py-16 text-center">
+              className="flex flex-col items-center gap-6 px-8 py-16 text-center">
+              {/* Банковский спиннер */}
               <div className="relative">
-                <div className="h-14 w-14 animate-spin rounded-full border-4 border-stone-100 border-t-indigo-600" />
+                <svg className="h-16 w-16 -rotate-90" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                  <motion.circle cx="28" cy="28" r="24" fill="none" stroke="#1a73e8" strokeWidth="4"
+                    strokeLinecap="round" strokeDasharray="150"
+                    animate={{ strokeDashoffset: [150, 0] }}
+                    transition={{ duration: 2.8, ease: "easeInOut" }}
+                  />
+                </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Lock size={16} strokeWidth={2} className="text-indigo-600" />
+                  <Lock size={18} strokeWidth={2} className="text-blue-600" />
                 </div>
               </div>
               <div>
-                <p className="font-bold text-stone-900">Обработка платежа</p>
-                <motion.p
-                  key={processingMsg}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-1.5 text-sm text-stone-500"
-                >
-                  {processingMsg}
-                </motion.p>
+                <p className="font-bold text-gray-900">Обработка платежа</p>
+                <motion.p key={processingIdx} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-gray-500">{PROCESSING_MSGS[processingIdx]}</motion.p>
               </div>
-              <div className="flex gap-1.5">
-                {[0, 1, 2].map((i) => (
-                  <motion.div key={i} className="h-1.5 w-1.5 rounded-full bg-indigo-400"
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }} />
-                ))}
+              <div className="w-full rounded-xl border bg-gray-50 px-4 py-3 text-left" style={{ borderColor: "#f3f4f6" }}>
+                <p className="text-[11px] font-semibold text-gray-400 mb-1.5">Транзакция</p>
+                <p className="font-mono text-xs text-gray-600">{txnId}</p>
+                <p className="mt-0.5 text-[11px] text-gray-400">RentGen · 299 ₽</p>
               </div>
+              <p className="text-[11px] text-gray-400">Не закрывайте страницу</p>
             </motion.div>
           )}
 
-          {/* ── Успех ── */}
+          {/* ══ УСПЕХ ══ */}
           {step === "success" && (
             <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="flex flex-col items-center gap-5 bg-white px-8 py-14 text-center">
+              className="flex flex-col items-center gap-5 px-8 py-14 text-center">
               <motion.div
-                initial={{ scale: 0, rotate: -20 }}
+                initial={{ scale: 0, rotate: -15 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 240, damping: 18 }}
+                transition={{ type: "spring", stiffness: 220, damping: 16 }}
                 className="flex h-20 w-20 items-center justify-center rounded-full"
-                style={{ background: "linear-gradient(135deg, #d1fae5, #a7f3d0)" }}
+                style={{ background: "linear-gradient(135deg,#d1fae5,#a7f3d0)" }}
               >
-                <CheckCircle2 size={36} strokeWidth={1.75} className="text-emerald-600" />
+                <CheckCircle2 size={38} strokeWidth={1.75} className="text-emerald-600" />
               </motion.div>
+
               <div>
-                <p className="text-xl font-bold text-stone-900">Платёж подтверждён</p>
-                <p className="mt-1 text-sm text-stone-500">Транзакция успешно проведена</p>
-                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs text-stone-500">
-                  <span className="font-mono">#{Math.random().toString(36).slice(2, 10).toUpperCase()}</span>
-                  <span>·</span>
-                  <span>299 ₽</span>
+                <p className="text-xl font-bold text-gray-900">Платёж подтверждён</p>
+                <p className="mt-1 text-sm text-gray-500">Транзакция успешно обработана банком</p>
+              </div>
+
+              {/* Чек */}
+              <div className="w-full rounded-2xl border px-5 py-4 text-left" style={{ borderColor: "#e5e7eb" }}>
+                <div className="flex items-center justify-between border-b pb-3 mb-3" style={{ borderColor: "#f3f4f6" }}>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Чек</p>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">Оплачено</span>
+                </div>
+                <div className="flex flex-col gap-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Получатель</span>
+                    <span className="font-semibold text-gray-800">RentGen</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Услуга</span>
+                    <span className="font-semibold text-gray-800">Премиум договор</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Сумма</span>
+                    <span className="font-bold text-gray-900">299 ₽</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Транзакция</span>
+                    <span className="font-mono text-[11px] text-gray-600">{txnId}</span>
+                  </div>
                 </div>
               </div>
+
               <button
                 type="button"
                 onClick={onSuccess}
-                className="inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-bold text-white transition hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "#ffffff", boxShadow: "0 4px 20px rgba(79,70,229,0.4)" }}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition hover:opacity-90"
+                style={{ background: "linear-gradient(135deg,#1a73e8,#0f4c9e)", color: "#fff", boxShadow: "0 4px 16px rgba(26,115,232,0.3)" }}
               >
                 <Sparkles size={14} strokeWidth={1.75} />
                 Сгенерировать договор
