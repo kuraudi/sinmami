@@ -46,14 +46,16 @@ function getApiBaseUrl() {
 }
 
 export const rentgenApi = {
-  async register(payload: { email: string; password: string; fullName?: string }) {
-    const response = await apiClient.post<AuthResponse>("/auth/register", payload);
-    return response.data;
+  async register(email: string, password: string, fullName?: string) {
+    const response = await apiClient.post<AuthResponse>("/auth/register", { email, password, fullName });
+    const d = response.data;
+    return { token: d.token, userId: d.userId, email: d.email, fullName: d.fullName, plan: String(d.plan) };
   },
 
-  async login(payload: { email: string; password: string }) {
-    const response = await apiClient.post<AuthResponse>("/auth/login", payload);
-    return response.data;
+  async login(email: string, password: string) {
+    const response = await apiClient.post<AuthResponse>("/auth/login", { email, password });
+    const d = response.data;
+    return { token: d.token, userId: d.userId, email: d.email, fullName: d.fullName, plan: String(d.plan) };
   },
 
   async getCurrentUser(plan: PlanHeader) {

@@ -254,6 +254,7 @@ export interface CurrentUserResponse {
 export interface AuthResponse {
   userId: string;
   email: string;
+  fullName?: string | null;
   plan: SubscriptionPlan;
   token: string;
 }

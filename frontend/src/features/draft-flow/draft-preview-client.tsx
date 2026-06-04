@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, ChevronLeft, Sparkles, AlertTriangle,
 } from "lucide-react";
@@ -14,6 +14,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { generateDraftDocument, validateDraftFlow } from "@/store/slices/draft-flow-slice";
 import { rentgenApi } from "@/lib/api/rentgen-api";
 import { addLocalDocumentId } from "@/lib/local-history";
+import { PaymentModal } from "@/features/draft-flow/payment-modal";
 import type { DraftDetailsResponse, DraftStepItemResponse } from "@/types/api";
 
 function groupSteps(steps: DraftStepItemResponse[]) {
@@ -43,6 +44,7 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
   const [steps, setSteps] = useState<DraftStepItemResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -62,7 +64,7 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
     void load();
   }, [draftId, plan, searchParams.get("t")]);
 
-  async function handleGenerate() {
+  async function doGenerate() {
     try {
       setError(null);
       const validation = await dispatch(validateDraftFlow(draftId)).unwrap();
@@ -75,6 +77,14 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
       router.push(`/documents/${generated.documentId}`);
     } catch {
       setError("Не удалось сгенерировать документ.");
+    }
+  }
+
+  function handleGenerate() {
+    if (plan === "Premium") {
+      setShowPayment(true);
+    } else {
+      void doGenerate();
     }
   }
 
@@ -206,6 +216,14 @@ export function DraftPreviewClient({ draftId }: { draftId: string }) {
           </>
         )}
       </div>
+      <AnimatePresence>
+        {showPayment && (
+          <PaymentModal
+            onClose={() => setShowPayment(false)}
+            onSuccess={() => { setShowPayment(false); void doGenerate(); }}
+          />
+        )}
+      </AnimatePresence>
     </AppShell>
   );
 }

@@ -2,7 +2,10 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { UserCircle, LogIn } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
+import { MeshGradient } from "@/components/ui/mesh-gradient";
+import { useAppSelector } from "@/store/hooks";
 
 const PlanSwitcher = dynamic(
   () => import("@/components/plan-switcher").then((m) => m.PlanSwitcher),
@@ -26,23 +29,19 @@ type AppShellProps = {
 };
 
 export function AppShell({ eyebrow, title, subtitle, children }: AppShellProps) {
-  return (
-    <div className="subtle-grid min-h-dvh relative overflow-x-hidden">
+  const { isAuthenticated, user } = useAppSelector((s) => s.auth);
 
-      {/* Aurora background blobs */}
+  return (
+    <div className="subtle-grid noise-overlay min-h-dvh relative overflow-x-hidden">
+
+      {/* Static aurora blobs */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div
-          className="aurora-blob-1 absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full opacity-30"
-          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)", filter: "blur(80px)" }}
-        />
-        <div
-          className="aurora-blob-2 absolute top-1/3 -right-40 h-[500px] w-[500px] rounded-full opacity-25"
-          style={{ background: "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)", filter: "blur(90px)" }}
-        />
-        <div
-          className="aurora-blob-3 absolute -bottom-20 left-1/3 h-[400px] w-[400px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, rgba(79,70,229,0.35) 0%, transparent 70%)", filter: "blur(70px)" }}
-        />
+        <div className="aurora-blob-1 absolute -top-40 -left-40 h-150 w-150 rounded-full opacity-25"
+          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)", filter: "blur(90px)" }} />
+        <div className="aurora-blob-2 absolute top-1/3 -right-40 h-125 w-125 rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, rgba(139,92,246,0.45) 0%, transparent 70%)", filter: "blur(100px)" }} />
+        <div className="aurora-blob-3 absolute -bottom-20 left-1/3 h-100 w-100 rounded-full opacity-15"
+          style={{ background: "radial-gradient(circle, rgba(79,70,229,0.4) 0%, transparent 70%)", filter: "blur(80px)" }} />
       </div>
 
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-4 px-3 py-4 sm:px-6 md:px-8 md:gap-5 md:py-5">
@@ -67,7 +66,22 @@ export function AppShell({ eyebrow, title, subtitle, children }: AppShellProps) 
             </span>
           </Link>
 
-          <PlanSwitcher />
+          <div className="flex items-center gap-2">
+            <PlanSwitcher />
+            {isAuthenticated ? (
+              <Link href="/account"
+                className="flex items-center gap-1.5 rounded-xl border border-(--line) bg-white/80 px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700">
+                <UserCircle size={14} strokeWidth={1.75} />
+                <span className="hidden sm:inline">{user?.fullName?.split(" ")[0] ?? "ЛК"}</span>
+              </Link>
+            ) : (
+              <Link href="/login"
+                className="flex items-center gap-1.5 rounded-xl border border-(--line) bg-white/80 px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700">
+                <LogIn size={14} strokeWidth={1.75} />
+                <span className="hidden sm:inline">Войти</span>
+              </Link>
+            )}
+          </div>
         </header>
 
         {/* Page title */}

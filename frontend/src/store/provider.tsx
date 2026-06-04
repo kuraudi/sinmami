@@ -9,6 +9,7 @@ import {
   hydratePlan,
   PLAN_STORAGE_KEY,
 } from "@/store/slices/session-slice";
+import { hydrateAuth } from "@/store/slices/auth-slice";
 import type { PlanHeader } from "@/types/api";
 
 function SessionBootstrap() {
@@ -17,6 +18,8 @@ function SessionBootstrap() {
   const hydrated = useAppSelector((state) => state.session.hydrated);
 
   useEffect(() => {
+    dispatch(hydrateAuth());
+
     const storedPlan = window.localStorage.getItem(PLAN_STORAGE_KEY);
     const planFromStorage: PlanHeader =
       storedPlan === "Premium" ? "Premium" : "Free";
@@ -25,10 +28,7 @@ function SessionBootstrap() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (!hydrated) {
-      return;
-    }
-
+    if (!hydrated) return;
     window.localStorage.setItem(PLAN_STORAGE_KEY, plan);
     void dispatch(fetchCurrentUser(plan));
   }, [dispatch, hydrated, plan]);

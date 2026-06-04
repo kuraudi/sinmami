@@ -1,6 +1,8 @@
+using System.Text;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RentGen.Api.Middleware;
 using RentGen.Api.Services;
 using RentGen.Application.Common.Interfaces;
@@ -23,6 +25,26 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddHttpContextAccessor();
+
+// JWT Authentication
+var jwtSecret = builder.Configuration["Jwt:Secret"]!;
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendDev", policy =>
@@ -38,7 +60,9 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
+
 builder.Services.AddScoped<ICurrentUserService, HttpCurrentUserService>();
+builder.Services.AddScoped<JwtService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
@@ -49,13 +73,9 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         if (dbContext.Database.IsRelational())
-        {
             dbContext.Database.Migrate();
-        }
         else
-        {
             dbContext.Database.EnsureCreated();
-        }
     }
     catch (Exception exception)
     {
@@ -73,11 +93,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("FrontendDev");
 app.UseSerilogRequestLogging();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
 
-public partial class Program
-{
-}
+public partial class Program { }

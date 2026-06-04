@@ -1,12 +1,25 @@
 import axios from "axios";
 import type { ApiErrorResponse, PlanHeader } from "@/types/api";
 
+export const AUTH_TOKEN_KEY = "rentgen_token";
+
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:5099/api",
   headers: {
     "Content-Type": "application/json",
   },
   timeout: 45000,
+});
+
+// Attach JWT token to every request
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
 });
 
 export function withPlan(plan: PlanHeader) {

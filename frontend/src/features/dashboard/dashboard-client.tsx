@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useMotionValue, useSpring, useTransform, useScroll, useInView } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useScroll, useInView } from "framer-motion";
 import {
   FileText, Sparkles, CheckCircle2, ArrowRight, Clock,
   ChevronRight, ShieldCheck, Layers, FileSignature,
   ClipboardList, CalendarDays, Home, PawPrint, Banknote, History,
-  Star, TrendingUp, Users, Award,
+  Star, TrendingUp, Users, Award, UserCircle, LogIn,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -17,8 +17,10 @@ import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { rentgenApi } from "@/lib/api/rentgen-api";
 import { getLocalDocumentIds } from "@/lib/local-history";
+import { GuestWarningModal } from "@/features/dashboard/guest-warning-modal";
 import { documentTypeLabel, formatDate } from "@/lib/presenters";
 import { useAppSelector } from "@/store/hooks";
+import Link from "next/link";
 import { DocumentType, type DocumentListItemResponse, type DocumentTypeCard } from "@/types/api";
 
 const FEATURES = [
@@ -84,11 +86,14 @@ export function DashboardClient() {
   const router = useRouter();
   const plan = useAppSelector((state) => state.session.plan);
 
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+
   const [documentTypes, setDocumentTypes] = useState<DocumentTypeCard[]>([]);
   const [documents, setDocuments] = useState<DocumentListItemResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showGuestWarning, setShowGuestWarning] = useState(false);
 
   // Mouse tracking for hero gradient
   const heroRef = useRef<HTMLDivElement>(null);
@@ -138,7 +143,15 @@ export function DashboardClient() {
     return () => { cancelled = true; };
   }, [plan]);
 
-  async function handleCreate() {
+  function handleCreate() {
+    if (!isAuthenticated) {
+      setShowGuestWarning(true);
+      return;
+    }
+    void createDraft();
+  }
+
+  async function createDraft() {
     try {
       setIsCreating(true);
       setError(null);
@@ -322,8 +335,8 @@ export function DashboardClient() {
           </motion.div>
         </div>
 
-        {/* ── Статы ── */}
-        <ScrollReveal className="rounded-3xl border border-(--line) bg-white p-4 sm:p-6 lg:col-span-12">
+        {/* ── Статы (скрыто) ── */}
+        {/* <ScrollReveal className="rounded-3xl border border-(--line) bg-white p-4 sm:p-6 lg:col-span-12">
           <div className="grid grid-cols-3 divide-x divide-(--line)">
             {STATS.map(({ icon: Icon, value, suffix, label }) => (
               <div key={label} className="flex flex-col items-center gap-1 px-2 text-center sm:px-4">
@@ -338,7 +351,7 @@ export function DashboardClient() {
               </div>
             ))}
           </div>
-        </ScrollReveal>
+        </ScrollReveal> */}
 
         {/* ── Как это работает ── */}
         <ScrollReveal className="bento-card rounded-3xl p-5 sm:p-6 lg:col-span-7" delay={0.05}>
@@ -494,6 +507,16 @@ export function DashboardClient() {
           {error}
         </motion.div>
       )}
+
+      {/* Модалка предупреждения для гостя */}
+      <AnimatePresence>
+        {showGuestWarning && (
+          <GuestWarningModal
+            onClose={() => setShowGuestWarning(false)}
+            onContinue={() => { setShowGuestWarning(false); void createDraft(); }}
+          />
+        )}
+      </AnimatePresence>
     </AppShell>
   );
 }
